@@ -1,5 +1,4 @@
 composer.lock
 vendor/
 tests/.env
-phpunit.xml
 .phpunit.result.cache
