@@ -1,0 +1,42 @@
+{
+    "name": "mirazmac/dotenvwriter",
+    "type": "library",
+    "description": "A PHP library to write values to .env (DotEnv) files\"",
+    "keywords": [
+        "env",
+        "dot env",
+        "dot env writer",
+        "environment",
+        "variables"
+    ],
+    "homepage": "https://mirazmac.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Miraz Mac",
+            "email": "mirazmac@gmail.com",
+            "homepage": "https://mirazmac.com",
+            "role": "Original Author"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MirazMac\\DotEnv\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MirazMac\\DotEnv\\Tests\\": "tests"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "require-dev": {
+        "vlucas/phpdotenv": "^5.3",
+        "phpunit/phpunit": "^9.5"
+    }
+}
