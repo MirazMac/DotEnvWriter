@@ -7,7 +7,9 @@ namespace MirazMac\DotEnv;
 /**
  * MirazMac\DotEnv\Writer
  *
- * A PHP library to write values to .env files
+ * A PHP library to write values to .env files.
+ *
+ * Heavily inspired from https://github.com/msztorc/laravel-env
  *
  * @author Miraz Mac <mirazmac@gmail.com>
  * @link https://mirazmac.com
@@ -183,7 +185,7 @@ class Writer
     {
         // If nothing is changed don't bother writing unless forced
         if (!$this->hasChanged() && !$force) {
-            return false;
+            return true;
         }
 
         return (false !== file_put_contents($this->path, $this->content, \LOCK_EX)  ?? true);
