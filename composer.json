@@ -1,7 +1,7 @@
 {
     "name": "mirazmac/dotenvwriter",
     "type": "library",
-    "description": "A PHP library to write values to .env (DotEnv) files\"",
+    "description": "A PHP library to write values to .env (DotEnv) files",
     "keywords": [
         "env",
         "dot env",
