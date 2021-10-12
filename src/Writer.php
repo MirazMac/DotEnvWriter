@@ -124,6 +124,7 @@ class Writer
         if ($this->exists($key)) {
             $this->content = preg_replace("/^{$key}=.*\s{0,1}/mu", '', $this->content);
             unset($this->variables[$key]);
+            $this->changed = true;
         }
 
         return $this;
