@@ -133,12 +133,12 @@ final class WriterTest extends TestCase
     }
 
     /**
-     * Tests constructing new instance when the file is missing
+     * Tests write env file without providing source file neither dest file
      */
     public function testMissingFile(): void
     {
         $this->expectException('\LogicException');
-        $writer = new Writer(__DIR__ . '/.envx');
+        (new Writer())->write();
     }
 
     /**
@@ -156,5 +156,62 @@ final class WriterTest extends TestCase
         $parsed = Dotenv::parse(file_get_contents(__DIR__ . '/.env'));
 
         $this->assertSame($url, $parsed['APP_URL']);
+    }
+
+    /**
+     * Test not provide source file
+     */
+    public function testNotProvideSourceFile(): void {
+        $writer = new Writer();
+        $url = 'https://mywebsite.com';
+
+        $writer->set('APP_URL', $url);
+
+        $parsed = Dotenv::parse($writer->getContent());
+
+        $this->assertSame($url, $parsed['APP_URL']);
+    }
+
+    /**
+     * Test write in custom path
+     */
+    public function testWriteCustomPath(): void {
+        $writer = new Writer();
+        $url = 'https://mywebsite.com';
+
+        $writer
+            ->set('APP_URL', $url)
+            ->write(false, __DIR__ . '/.env');
+
+        // Now that we have written the file, load is via dotenv parser
+        $parsed = Dotenv::parse(file_get_contents(__DIR__ . '/.env'));
+
+        $this->assertSame($url, $parsed['APP_URL']);
+    }
+
+    /**
+     * Test output format
+     */
+    public function testOutputFormat(): void {
+        $writer = new Writer();
+
+        $env = [
+            'app_env_1' => 'value1',
+            'APP_ENV_2' => 'VALUE_2',
+        ];
+
+        $expected = <<<EOF
+app_env_1=value1
+APP_ENV_2=VALUE_2
+
+EOF;
+
+        foreach ($env as $key => $value) {
+            $writer->set($key, $value);
+        }
+
+        $expected = preg_replace("#[\n\r]+#", PHP_EOL, $expected);
+
+        $this->assertSame($expected, $writer->getContent());
     }
 }
