@@ -21,14 +21,14 @@ class Writer
      *
      * @var        string
      */
-    protected $content;
+    protected $content = "";
 
     /**
      * Path to the .env file
      *
-     * @var        string
+     * @var        string|null
      */
-    protected $path;
+    protected $sourceFile = null;
 
     /**
      * Parsed variables, just for reference, not properly type-casted
@@ -47,18 +47,16 @@ class Writer
     /**
      * Constructs a new instance.
      *
-     * @param      string           $path  The environment path
+     * @param      string|null      $sourceFile  The environment path
      * @throws     \LogicException  If the file is missing
      */
-    public function __construct(string $path)
+    public function __construct(?string $sourceFile = null)
     {
-        if (!is_file($path)) {
-            throw new \LogicException("No file exists at: {$path}");
+        if (null !== $sourceFile) {
+            $this->sourceFile = $sourceFile;
+            $this->content = file_get_contents($sourceFile);
+            $this->parse();
         }
-
-        $this->path = $path;
-        $this->content = file_get_contents($path);
-        $this->parse();
     }
 
     /**
@@ -89,7 +87,7 @@ class Writer
                 throw new \InvalidArgumentException("Failed to add new key `{$key}`. As it contains invalid characters, please use only ASCII letters, digits and underscores only.");
             }
 
-            $this->content .= PHP_EOL . "{$key}={$value}" . PHP_EOL;
+            $this->content .= "{$key}={$value}" . PHP_EOL;
         }
 
         $this->variables[$key] = $originalValue;
@@ -178,18 +176,28 @@ class Writer
     /**
      * Write the contents to the env file
      *
-     * @param      bool  $force  By default we only write when something has changed,
-     *                           but you can force to write the file
+     * @param      bool  $force     By default we only write when something has changed,
+     *                              but you can force to write the file
+     * @param      string $destFile Destionation file. By default it's the same as $sourceFile is provided
+     *
      * @return     bool
      */
-    public function write(bool $force = false) : bool
+    public function write(bool $force = false, ?string $destFile = null) : bool
     {
+        if (null === $destFile) {
+            $destFile = $this->sourceFile;
+        }
+
+        if (null === $destFile) {
+            throw new \LogicException("No file provided");
+        }
+
         // If nothing is changed don't bother writing unless forced
         if (!$this->hasChanged() && !$force) {
             return true;
         }
 
-        return (false !== file_put_contents($this->path, $this->content, \LOCK_EX)  ?? true);
+        return (false !== file_put_contents($destFile, $this->content, \LOCK_EX)  ?? true);
     }
 
     /**
