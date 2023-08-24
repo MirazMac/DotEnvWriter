@@ -18,7 +18,7 @@ $writer
 ->set('APP_NAME', 'My App')
 ->set('APP_URL', 'https://laravel.com')
 ->set('APP_DIR', '${BASE_DIR}/app')
-// Third parameter set to TRUe to force quote a single word value
+// Third parameter set to TRUE to force quote a single word value
 ->set('APP_BUCKET', 's3-bucket', true);
 
 // Write the values to file
@@ -28,13 +28,13 @@ $writer->write();
 ## API
 ## Methods
 
-### ``__construct(string $path)``
+### ``__construct(?string $sourceFile = null)``
 
 Constructs a new instance.
 
 **Arguments**
 
-string           ``$path``  The environment file path
+string|null           ``$sourceFile``  The environment file path to load values from, optional.
 
 
 ### `` set(string $key, string $value, bool $forceQuote = false) : self``
@@ -63,12 +63,15 @@ States if one or more values has changed
 ### ``getContent() : string``
 Returns the current content
 
-### ``write(bool $force = false) : bool``
+### ``write(bool $force = false, ?string $destFile = null) : bool``
 Write the contents to the ``.env`` file.
 
 **Arguments**
 
 bool  ``$force``  By default we only write when something has changed, but you can force to write the file by setting this to TRUE.
+
+string|null ``$destFile`` Destionation file. By default it's the same as ``$sourceFile`` is provided
+
 
 
 ## F.A.Q
