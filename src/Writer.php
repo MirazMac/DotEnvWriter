@@ -263,7 +263,7 @@ class Writer
      */
     protected function escapeValue(string $value, bool $forceQuote): string
     {
-        if (empty($value)) {
+        if ('' === $value) {
             return '';
         }
 
