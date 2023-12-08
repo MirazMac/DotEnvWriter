@@ -276,9 +276,9 @@ class Writer
         }
 
         // Quote the values if
-        // it contains white-space or the following characters: " \ = : . $
+        // it contains white-space or the following characters: " \ = : . $ ( )
         // or simply force quote is enabled
-        if (preg_match('/\s|"|\\\\|=|:|\.|\$/u', $value) || $forceQuote) {
+        if (preg_match('/\s|"|\\\\|=|:|\.|\$|\(|\)/u', $value) || $forceQuote) {
             // Replace backslashes with even more backslashes so when writing we can have escaped backslashes
             // damn.. that rhymes
             $value = str_replace('\\', '\\\\\\\\', $value);
