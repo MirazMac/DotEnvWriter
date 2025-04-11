@@ -87,6 +87,11 @@ class Writer
                 throw new \InvalidArgumentException("Failed to add new key `{$key}`. As it contains invalid characters, please use only ASCII letters, digits and underscores only.");
             }
 
+            // Check if there's a newline at the end of the current stream (if not, set one)
+            if (mb_substr($this->content, -1) !== PHP_EOL) {
+                $this->content .= PHP_EOL;
+            }
+
             $this->content .= "{$key}={$value}" . PHP_EOL;
         }
 
