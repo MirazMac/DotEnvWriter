@@ -235,9 +235,42 @@ class Writer
     {
         $lines = preg_split('/\r\n|\r|\n/', $this->content);
 
+        $currentKey = null;
+        $currentValue = '';
+        $isMultiline = false;
+
         foreach ($lines as $line) {
-            if (mb_strlen(trim($line)) && !(mb_strpos(trim($line), '#') === 0)) {
-                [$key, $value] = explode('=', (string) $line);
+            $trimmedLine = trim($line);
+
+            // Skip empty lines or comments
+            if (mb_strlen($trimmedLine) === 0 || mb_strpos($trimmedLine, '#') === 0) {
+                continue;
+            }
+
+            // If we are in a multiline value, append the current line
+            if ($isMultiline) {
+                $currentValue .= PHP_EOL . $trimmedLine;
+
+                // Check if the multiline value ends
+                if (preg_match('/["\']$/', $trimmedLine)) {
+                    $this->variables[$currentKey] = $this->formatValue($currentValue);
+                    $isMultiline = false;
+                    $currentKey = null;
+                    $currentValue = '';
+                }
+
+                continue;
+            }
+
+            // Parse the line into key and value
+            [$key, $value] = explode('=', (string) $line, 2);
+
+            // Check if the value starts a multiline string
+            if (preg_match('/^["\'].*[^"\']$/', $value)) {
+                $currentKey = $key;
+                $currentValue = $value;
+                $isMultiline = true;
+            } else {
                 $this->variables[$key] = $this->formatValue($value);
             }
         }
