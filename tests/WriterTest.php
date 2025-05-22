@@ -243,17 +243,17 @@ EOT;
         $writer = new Writer(__DIR__ . '/.env');
 
         // Test that values are parsed correctly
-        $this->assertEquals('normal value', $writer->get('SINGLE_LINE'));
-        $this->assertEquals("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_DOUBLE'), 'MULTI_LINE_DOUBLE');
-        $this->assertEquals("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_SINGLE'), 'MULTI_LINE_SINGLE');
-        $this->assertEquals("multi line\nwith comment", $writer->get('WITH_COMMENT'));
-        $this->assertEquals('simple_value', $writer->get('AFTER_MULTILINE'));
+        $this->assertSame('normal value', $writer->get('SINGLE_LINE'));
+        $this->assertSame("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_DOUBLE'), 'MULTI_LINE_DOUBLE');
+        $this->assertSame("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_SINGLE'), 'MULTI_LINE_SINGLE');
+        $this->assertSame("multi line\nwith comment", $writer->get('WITH_COMMENT'));
+        $this->assertSame('simple_value', $writer->get('AFTER_MULTILINE'));
 
         // Test that we can write back the values
         $writer->write(true);
 
         // Read the file again to ensure values were preserved
         $newWriter = new Writer(__DIR__ . '/.env');
-        $this->assertEquals($writer->getAll(), $newWriter->getAll());
+        $this->assertSame($writer->getAll(), $newWriter->getAll());
     }
 }
