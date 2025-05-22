@@ -71,7 +71,7 @@ class Writer
      * @throws     \InvalidArgumentException If a new key contains invalid characters
      * @return     self
      */
-    public function set(string $key, string $value, bool $forceQuote = false) : self
+    public function set(string $key, string $value, bool $forceQuote = false): self
     {
         $originalValue = $value;
 
@@ -107,7 +107,7 @@ class Writer
      * @param      array  $values  The values as key => value pairs
      * @return     self
      */
-    public function setValues(array $values) : self
+    public function setValues(array $values): self
     {
         foreach ($values as $key => $value) {
             $this->set($key, $value);
@@ -122,7 +122,7 @@ class Writer
      * @param      string  $key    The key
      * @return     self
      */
-    public function delete(string $key) : self
+    public function delete(string $key): self
     {
         if ($this->exists($key)) {
             $this->content = preg_replace("/^{$key}=.*\s{0,1}/mu", '', $this->content);
@@ -138,7 +138,7 @@ class Writer
      *
      * @return     bool
      */
-    public function hasChanged() : bool
+    public function hasChanged(): bool
     {
         return $this->changed;
     }
@@ -173,7 +173,7 @@ class Writer
      *
      * @return     string
      */
-    public function getContent() : string
+    public function getContent(): string
     {
         return $this->content;
     }
@@ -187,7 +187,7 @@ class Writer
      *
      * @return     bool
      */
-    public function write(bool $force = false, ?string $destFile = null) : bool
+    public function write(bool $force = false, ?string $destFile = null): bool
     {
         if (null === $destFile) {
             $destFile = $this->sourceFile;
@@ -223,7 +223,7 @@ class Writer
      *
      * @return     bool
      */
-    protected function isValidName(string $key) : bool
+    protected function isValidName(string $key): bool
     {
         return preg_match('/^[\w\.]+$/', $key) ? true : false;
     }
@@ -231,13 +231,51 @@ class Writer
     /**
      * Parses the environment file line by line and store the variables
      */
-    protected function parse() : void
+    protected function parse(): void
     {
         $lines = preg_split('/\r\n|\r|\n/', $this->content);
+        $currentKey = null;
+        $currentValue = '';
+        $isMultiline = false;
 
         foreach ($lines as $line) {
-            if (mb_strlen(trim($line)) && !(mb_strpos(trim($line), '#') === 0)) {
-                [$key, $value] = explode('=', (string) $line);
+            // Remove inline comments
+            $line = preg_replace('/#.*$/', '', $line);
+
+            // Trim the line
+            $trimmedLine = trim($line);
+
+            // Skip empty lines or comments
+            if (mb_strlen($trimmedLine) === 0 || mb_strpos($trimmedLine, '#') === 0) {
+                continue;
+            }
+
+            // If we are in a multiline value, append the current line
+            if ($isMultiline) {
+
+                $currentValue .= PHP_EOL . $trimmedLine;
+
+                // Check if the multiline value ends
+                if (preg_match('/["\']$/', $trimmedLine)) {
+                    $currentValue = $this->stripQuotes($currentValue);
+                    $this->variables[$currentKey] = $this->formatValue($currentValue);
+                    $isMultiline = false;
+                    $currentKey = null;
+                    $currentValue = '';
+                }
+
+                continue;
+            }
+
+            // Parse the line into key and value
+            [$key, $value] = explode('=', (string) $line, 2);
+
+            // Check if the value starts a multiline string
+            if (preg_match('/^["\'].*[^"\']$/', $value)) {
+                $currentKey = $key;
+                $currentValue = $value;
+                $isMultiline = true;
+            } else {
                 $this->variables[$key] = $this->formatValue($value);
             }
         }
@@ -251,7 +289,7 @@ class Writer
      */
     protected function stripQuotes(string $value): string
     {
-        return preg_replace('/^(\'(.*)\'|"(.*)")$/u', '$2$3', $value);
+        return preg_replace('/^["\']|["\']$/s', '', $value);
     }
 
     /**
@@ -262,7 +300,13 @@ class Writer
      */
     protected function formatValue(string $value): string
     {
+        // First split by comment to remove any trailing comments
         $value = trim(explode('#', trim($value))[0]);
+
+        // For multi-line values, we need to handle the entire string
+        if (preg_match('/^["\'].*["\']$/s', $value)) {
+            return stripslashes($this->stripQuotes($value));
+        }
 
         return stripslashes($this->stripQuotes($value));
     }
