@@ -16,13 +16,13 @@ final class WriterTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        copy(__DIR__.'/.env.example', __DIR__ . '/.env');
+        copy(__DIR__ . '/.env.example', __DIR__ . '/.env');
     }
 
     public function tearDown(): void
     {
         parent::tearDown();
-        unlink(__DIR__.'/.env');
+        unlink(__DIR__ . '/.env');
     }
 
     /**
@@ -100,7 +100,7 @@ final class WriterTest extends TestCase
     /**
      * Test seting of a new value with invalid key name
      */
-    public function testSetInvalidKey() : void
+    public function testSetInvalidKey(): void
     {
         $writer = new Writer(__DIR__ . '/.env');
 
@@ -111,7 +111,7 @@ final class WriterTest extends TestCase
     /**
      * Set deleting a value
      */
-    public function testDeleteValue() : void
+    public function testDeleteValue(): void
     {
         $writer = new Writer(__DIR__ . '/.env');
         $writer->delete('APP_NAME')->write();
@@ -150,7 +150,7 @@ final class WriterTest extends TestCase
         $url = 'https://mywebsite.com';
 
         $writer->set('APP_URL', $url)
-        ->write();
+            ->write();
 
         // Now that we have written the file, load is via dotenv parser
         $parsed = Dotenv::parse(file_get_contents(__DIR__ . '/.env'));
@@ -161,7 +161,8 @@ final class WriterTest extends TestCase
     /**
      * Test not provide source file
      */
-    public function testNotProvideSourceFile(): void {
+    public function testNotProvideSourceFile(): void
+    {
         $writer = new Writer();
         $url = 'https://mywebsite.com';
 
@@ -175,7 +176,8 @@ final class WriterTest extends TestCase
     /**
      * Test write in custom path
      */
-    public function testWriteCustomPath(): void {
+    public function testWriteCustomPath(): void
+    {
         $writer = new Writer();
         $url = 'https://mywebsite.com';
 
@@ -192,7 +194,8 @@ final class WriterTest extends TestCase
     /**
      * Test output format
      */
-    public function testOutputFormat(): void {
+    public function testOutputFormat(): void
+    {
         $writer = new Writer();
 
         $env = [
@@ -201,6 +204,7 @@ final class WriterTest extends TestCase
         ];
 
         $expected = <<<EOF
+
 app_env_1=value1
 APP_ENV_2=VALUE_2
 
@@ -213,5 +217,43 @@ EOF;
         $expected = preg_replace("#[\n\r]+#", PHP_EOL, $expected);
 
         $this->assertSame($expected, $writer->getContent());
+    }
+
+    /**
+     * Test multi-line value parsing
+     */
+    public function testMultiLineValues(): void
+    {
+        // Create a temporary .env file with multi-line values
+        $envContent = <<<'EOT'
+SINGLE_LINE="normal value"
+MULTI_LINE_DOUBLE="first line
+second line
+third line"
+MULTI_LINE_SINGLE='first line
+second line
+third line'
+WITH_COMMENT="multi line
+with comment" # this is a comment
+AFTER_MULTILINE=simple_value
+
+EOT;
+        file_put_contents(__DIR__ . '/.env', $envContent);
+
+        $writer = new Writer(__DIR__ . '/.env');
+
+        // Test that values are parsed correctly
+        $this->assertEquals('normal value', $writer->get('SINGLE_LINE'));
+        $this->assertEquals("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_DOUBLE'), 'MULTI_LINE_DOUBLE');
+        $this->assertEquals("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_SINGLE'), 'MULTI_LINE_SINGLE');
+        $this->assertEquals("multi line\nwith comment", $writer->get('WITH_COMMENT'));
+        $this->assertEquals('simple_value', $writer->get('AFTER_MULTILINE'));
+
+        // Test that we can write back the values
+        $writer->write(true);
+
+        // Read the file again to ensure values were preserved
+        $newWriter = new Writer(__DIR__ . '/.env');
+        $this->assertEquals($writer->getAll(), $newWriter->getAll());
     }
 }
