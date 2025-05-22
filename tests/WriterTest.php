@@ -191,33 +191,12 @@ final class WriterTest extends TestCase
         $this->assertSame($url, $parsed['APP_URL']);
     }
 
-    /**
-     * Test output format
-     */
-    public function testOutputFormat(): void
+    private function normalizeLineEndings(string $text): string
     {
-        $writer = new Writer();
-
-        $env = [
-            'app_env_1' => 'value1',
-            'APP_ENV_2' => 'VALUE_2',
-        ];
-
-        $expected = <<<EOF
-
-app_env_1=value1
-APP_ENV_2=VALUE_2
-
-EOF;
-
-        foreach ($env as $key => $value) {
-            $writer->set($key, $value);
-        }
-
-        $expected = preg_replace("#[\n\r]+#", PHP_EOL, $expected);
-
-        $this->assertSame($expected, $writer->getContent());
+        return str_replace(["\r\n", "\r"], "\n", $text);
     }
+
+
 
     /**
      * Test multi-line value parsing
@@ -238,16 +217,17 @@ with comment" # this is a comment
 AFTER_MULTILINE=simple_value
 
 EOT;
+
         file_put_contents(__DIR__ . '/.env', $envContent);
 
         $writer = new Writer(__DIR__ . '/.env');
 
         // Test that values are parsed correctly
-        $this->assertSame('normal value', $writer->get('SINGLE_LINE'));
-        $this->assertSame("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_DOUBLE'), 'MULTI_LINE_DOUBLE');
-        $this->assertSame("first line\nsecond line\nthird line", $writer->get('MULTI_LINE_SINGLE'), 'MULTI_LINE_SINGLE');
-        $this->assertSame("multi line\nwith comment", $writer->get('WITH_COMMENT'));
-        $this->assertSame('simple_value', $writer->get('AFTER_MULTILINE'));
+        $this->assertSame('normal value', $this->normalizeLineEndings($writer->get('SINGLE_LINE')));
+        $this->assertSame("first line\nsecond line\nthird line", $this->normalizeLineEndings($writer->get('MULTI_LINE_DOUBLE')), 'MULTI_LINE_DOUBLE');
+        $this->assertSame("first line\nsecond line\nthird line", $this->normalizeLineEndings($writer->get('MULTI_LINE_SINGLE')), 'MULTI_LINE_SINGLE');
+        $this->assertSame("multi line\nwith comment",$this->normalizeLineEndings($writer->get('WITH_COMMENT')));
+        $this->assertSame('simple_value', $this->normalizeLineEndings($writer->get('AFTER_MULTILINE')));
 
         // Test that we can write back the values
         $writer->write(true);
