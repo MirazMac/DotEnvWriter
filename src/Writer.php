@@ -134,6 +134,45 @@ class Writer
     }
 
     /**
+     * Rename an environment variable key in place, preserving its value and position
+     *
+     * @param      string  $oldKey  The current key name
+     * @param      string  $newKey  The new key name
+     *
+     * @throws     \InvalidArgumentException If either key name is invalid, old key doesn't exist, or new key already exists
+     * @return     self
+     */
+    public function rename(string $oldKey, string $newKey): self
+    {
+        if ($oldKey === $newKey) {
+            return $this;
+        }
+
+        if (!$this->isValidName($oldKey)) {
+            throw new \InvalidArgumentException("Invalid key name `{$oldKey}`. Please use only ASCII letters, digits and underscores.");
+        }
+
+        if (!$this->isValidName($newKey)) {
+            throw new \InvalidArgumentException("Invalid key name `{$newKey}`. Please use only ASCII letters, digits and underscores.");
+        }
+
+        if (!$this->exists($oldKey)) {
+            throw new \InvalidArgumentException("The key `{$oldKey}` does not exist.");
+        }
+
+        if ($this->exists($newKey)) {
+            throw new \InvalidArgumentException("The key `{$newKey}` already exists.");
+        }
+
+        $this->content = preg_replace("/^{$oldKey}(=.*)$/mu", "{$newKey}$1", $this->content);
+        $this->variables[$newKey] = $this->variables[$oldKey];
+        unset($this->variables[$oldKey]);
+        $this->changed = true;
+
+        return $this;
+    }
+
+    /**
      * States if one or more values has changed
      *
      * @return     bool

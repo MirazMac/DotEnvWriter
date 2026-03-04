@@ -191,6 +191,145 @@ final class WriterTest extends TestCase
         $this->assertSame($url, $parsed['APP_URL']);
     }
 
+    /**
+     * Test basic rename preserves value and removes old key
+     */
+    public function testRenameBasic(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+        $original = $writer->get('APP_NAME');
+        $writer->rename('APP_NAME', 'APPLICATION_NAME')->write();
+
+        $parsed = Dotenv::parse(file_get_contents(__DIR__ . '/.env'));
+
+        $this->assertSame($original, $parsed['APPLICATION_NAME']);
+        $this->assertArrayNotHasKey('APP_NAME', $parsed);
+    }
+
+    /**
+     * Test rename preserves position in file
+     */
+    public function testRenamePreservesPosition(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+        $contentBefore = $writer->getContent();
+
+        // APP_NAME is the first key - after rename it should still be first
+        $writer->rename('APP_NAME', 'APPLICATION_NAME');
+        $content = $writer->getContent();
+
+        // APPLICATION_NAME should appear before APP_ENV
+        $this->assertLessThan(
+            strpos($content, 'APP_ENV='),
+            strpos($content, 'APPLICATION_NAME=')
+        );
+    }
+
+    /**
+     * Test rename preserves quoted values
+     */
+    public function testRenamePreservesQuotedValue(): void
+    {
+        $envContent = "QUOTED_VAR=\"hello world\"\nOTHER=value\n";
+        file_put_contents(__DIR__ . '/.env', $envContent);
+
+        $writer = new Writer(__DIR__ . '/.env');
+        $writer->rename('QUOTED_VAR', 'RENAMED_VAR');
+
+        $this->assertStringContainsString('RENAMED_VAR="hello world"', $writer->getContent());
+        $this->assertStringNotContainsString('QUOTED_VAR=', $writer->getContent());
+    }
+
+    /**
+     * Test rename is chainable
+     */
+    public function testRenameIsChainable(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+        $result = $writer->rename('APP_NAME', 'APPLICATION_NAME');
+
+        $this->assertSame($writer, $result);
+    }
+
+    /**
+     * Test rename sets changed flag
+     */
+    public function testRenameSetsChanged(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+        $this->assertFalse($writer->hasChanged());
+
+        $writer->rename('APP_NAME', 'APPLICATION_NAME');
+        $this->assertTrue($writer->hasChanged());
+    }
+
+    /**
+     * Test rename throws on missing old key
+     */
+    public function testRenameThrowsOnMissingOldKey(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $writer->rename('NONEXISTENT_KEY', 'NEW_KEY');
+    }
+
+    /**
+     * Test rename throws on existing new key
+     */
+    public function testRenameThrowsOnExistingNewKey(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $writer->rename('APP_NAME', 'APP_ENV');
+    }
+
+    /**
+     * Test rename throws on invalid key names
+     */
+    public function testRenameThrowsOnInvalidKeyNames(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $writer->rename('INVALID KEY', 'NEW_KEY');
+    }
+
+    /**
+     * Test rename with same key is a no-op
+     */
+    public function testRenameSameKeyNoOp(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+        $contentBefore = $writer->getContent();
+
+        $writer->rename('APP_NAME', 'APP_NAME');
+
+        $this->assertFalse($writer->hasChanged());
+        $this->assertSame($contentBefore, $writer->getContent());
+    }
+
+    /**
+     * Test rename chained with other operations
+     */
+    public function testRenameChainedWithOtherOps(): void
+    {
+        $writer = new Writer(__DIR__ . '/.env');
+        $writer
+            ->rename('APP_NAME', 'APPLICATION_NAME')
+            ->set('NEW_VAR', 'new_value')
+            ->delete('APP_DEBUG')
+            ->write();
+
+        $parsed = Dotenv::parse(file_get_contents(__DIR__ . '/.env'));
+
+        $this->assertArrayHasKey('APPLICATION_NAME', $parsed);
+        $this->assertArrayNotHasKey('APP_NAME', $parsed);
+        $this->assertSame('new_value', $parsed['NEW_VAR']);
+        $this->assertArrayNotHasKey('APP_DEBUG', $parsed);
+    }
+
     private function normalizeLineEndings(string $text): string
     {
         return str_replace(["\r\n", "\r"], "\n", $text);

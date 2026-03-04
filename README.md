@@ -57,6 +57,17 @@ Delete an environment variable if present. This method is chainable.
 
 string  ``$key``        The key
 
+### `` rename(string $oldKey, string $newKey) : self``
+Rename an environment variable key in place, preserving its value and position in the file. This method is chainable.
+
+Throws ``\InvalidArgumentException`` if either key name is invalid, if the old key does not exist, or if the new key already exists.
+
+**Arguments**
+
+string  ``$oldKey``     The current key name
+
+string  ``$newKey``     The new key name
+
 ### ``hasChanged() : bool``
 States if one or more values has changed
 
